@@ -2,20 +2,25 @@
 
 #include <stack>
 
-template <typename Relation>
+// R models a relation
+template <typename R>
 class parser_arff
 {
 public:
-    parser_arff(istream& ins): _ins(ins) {};
+    template <typename I>
+    parser_arff(I & begin, I end)
+    {
+        parse(begin,end);
+    }
 
     void parse()
     {
-        bypass_comments();
-        get_relation_name();
-        bypass_comments();
-        get_attributes();
-        bypass_comments();
-        get_data();
+        bypass_comments(begin,end);
+        relation_name(begin,end);
+        bypass_comments(begin,end);
+        attributes(begin,end);
+        bypass_comments(begin,end);
+        data();
     }
 
 private:
@@ -33,71 +38,51 @@ private:
         LINE_BREAK
     };
 
-    class token
+    struct token
     {
-        TOKEN   _token;
-        int     _index;
-        char    _sym;
+        TOKEN   tok;
+        int     index;
+        char    sym;
     };
 
-    token           _next_token;
-    int             _index;
-    istream         _ins;
-    Relation        _rel;
-    char            _sym;
+    token           next_tok;
+    int             index;
+    istream         ins;
+    Relation        rel;
+    char            sym;
 
-    stack<char> history;
+    std::stack<char> history;
 
-    TOKEN peekNext()
+    auto peek_next() const { return ins.peek(); }
+
+    void bypass_comments()
     {
-        return ins.peek();
-    };
-
-    void bypassComments()
-    {
-        getNext();
-        while (nextToken == COMMENT)
+        next();
+        while (next_tok == COMMENT)
         {
-            while (nextToken != LINE_BREAK)
-                getNext();
+            while (next_tok != LINE_BREAK)
+                next();
 
-            getNext();
+            next();
         }
-    };
+    }
 
-    bool match(TOKEN token)
+    auto match(TOKEN token) { next(); return token == next_tok; }
+    bool match(char symbol) { next(); return sym == symbol; }
+    char symbol() { return next_tok == NOTHING ? 0 sym; }
+
+    void relation_name()
     {
-        getNext();
-        return token == nextToken;
-    };
+        std::string s;
 
-    bool match(char symbol)
-    {
-        getNext();
-        return this->symbol == symbol;
-    };
-
-    char get_symbol()
-    {
-        if (next_token == NOTHING)
-            return 0;
-        else
-            return symbol;
-    };
-
-    void get_relation_name()
-    {
-        string s;
-
-        get_next();
-        s += get_symbol();
+        next();
+        s += symbol();
 
         while (true)
         {
-            get_next();
-
-            if (next_token == CHARACTER)
-                s += get_symbol();
+            next();
+            if (next_tok == CHARACTER)
+                s += symbol();
             else
                 break;
         }
@@ -109,11 +94,11 @@ private:
         s.clear();
         while (true)
         {
-            get_next();
-            switch (next_token)
+            next();
+            switch (next_tok)
             {
                 case CHARACTER:
-                    s += getSymbol();
+                    s += symbol();
                     break;
             }
         }
@@ -128,9 +113,9 @@ private:
     {
         for (int i = 0; i < (int)s.length(); i++)
             tolower(s[i]);
-    };
+    }
 
-    void get_attributes()
+    void attributes()
     {
         // @attribute outlook {sunny, overcast, rainy}
 
@@ -157,21 +142,22 @@ private:
         }
     };
 
-    void getData()
+    void data()
     {
-    };
+    }
 
-    void bypassComment()
+    void bypass_comments()
     {
 
-    };
+    }
 
-    void putBack()
+    void put_back()
     {
         ins.putback(symbol);
     }
 
-    void getNext() {
+    void next()
+    {
         ins.get(symbol);
 
         if (ins.eof())
@@ -214,6 +200,3 @@ private:
         }
     };
 };
-
-
-#endif
