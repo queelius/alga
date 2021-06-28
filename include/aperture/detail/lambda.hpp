@@ -21,8 +21,8 @@ namespace aperture::detail
                           // default is lexographic
     auto close(exp * body, env * e, O o = O())
     {
-        auto params = e->free(); // find unbounded symbols (free variables)
-        std::sort(free,o);
+        auto params = free(body,e); // find unbounded symbols (free variables) wrt e
+        std::sort(params,o);
 
         return make_unique(
                    lambda(make_list(params.begin(),params.end()),
