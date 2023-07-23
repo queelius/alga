@@ -1,5 +1,5 @@
-#include "lc_alpha.hpp"
-#include "porter2stemmer.hpp"
+#include "include/parsers/lc_alpha.hpp"
+#include "include/parsers/porter2stemmer.hpp"
 #include <iostream>
 
 int main()

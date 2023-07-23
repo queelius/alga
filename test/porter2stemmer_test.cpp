@@ -1,7 +1,4 @@
-
-
-
-#include "porter2stemmer.h"
+#include "include/parsers/porter2stemmer.h"
 #include <string>
 #include <iostream>
 
