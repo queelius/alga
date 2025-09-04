@@ -37,8 +37,8 @@ struct word_parser
     }
 
     word_parser(RW rewriter = RW(), string word_pattern = default_word_pattern()) :
-        word_pattern(move(word_pattern)),
-        rewriter(move(rewriter)) {}
+        rewriter(move(rewriter)),
+        word_pattern(move(word_pattern)) {}
 
     auto operator()(string x, int max_iterations = 0) const
     {

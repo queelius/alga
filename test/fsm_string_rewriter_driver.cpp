@@ -1,6 +1,6 @@
-#include "word_parser.hpp"
-#include "fsm_string_rewriter.hpp"
-#include "ngram_model.hpp"
+#include "parsers/word_parser.hpp"
+#include "parsers/fsm_string_rewriter.hpp"
+#include "parsers/ngram_stemmer.hpp"
 #include <iostream>
 
 auto production()

@@ -29,7 +29,7 @@ static bool replaceIfExists(string& word,
 static bool isValidLIEnding(char ch);
 static bool containsVowel(const string& word, size_t start, size_t end);
 
-namespace alex::text
+namespace algebraic_parsers
 {
     void porter2stemmer(string & word)
     {

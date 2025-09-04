@@ -1,7 +1,10 @@
 
 #pragma once
 
-namespace alex::language
+#include "porter2stemmer.hpp"
+#include <array>
+
+namespace algebraic_parsers
 {
     template <int N, typename Stem>
     struct ngram_stem

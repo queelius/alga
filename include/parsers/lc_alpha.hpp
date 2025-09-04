@@ -8,7 +8,7 @@ using std::string;
 using std::string_view;
 using std::optional;
 
-namespace alex::text
+namespace algebraic_parsers
 {
     class lc_alpha
     {

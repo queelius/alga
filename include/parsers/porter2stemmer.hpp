@@ -17,7 +17,7 @@ using std::string;
 using std::optional;
 using std::pair;
 
-namespace alex::text
+namespace algebraic_parsers
 {
     void porter2stemmer(string &);
 
@@ -83,7 +83,7 @@ namespace alex::text
         }
         */
 
-       static constexpr auto alphabet(alphbet_type c) { return isalpha(c); }
+       static constexpr auto alphabet(alphabet_type c) { return isalpha(c); }
 
         auto operator()(lc_alpha const & x) const
         {

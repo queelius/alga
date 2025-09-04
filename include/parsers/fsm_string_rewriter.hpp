@@ -54,7 +54,7 @@ struct fsm_string_rewriter
 
     auto ignore_case() const
     {
-        return flags & std::regex_constants::icase == flags;
+        return (flags & std::regex_constants::icase) == std::regex_constants::icase;
     }
 
     auto push(rule_type r) { return rules.push_back(r); }
