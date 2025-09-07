@@ -14,7 +14,7 @@
 using std::string;
 using std::optional;
 
-namespace algebraic_parsers
+namespace alga
 {
     void porter2stemmer(string &);
     

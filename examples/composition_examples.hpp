@@ -8,9 +8,9 @@
  * into sophisticated parsing systems, building on the theoretical framework.
  */
 
-#include "../include/parsers/lc_alpha.hpp"
-#include "../include/parsers/porter2stemmer.hpp"
-#include "../include/parsers/fsm_string_rewriter.hpp"
+#include "parsers/lc_alpha.hpp"
+#include "parsers/porter2stemmer.hpp"
+#include "parsers/fsm_string_rewriter.hpp"
 #include <variant>
 #include <vector>
 #include <functional>
@@ -19,9 +19,9 @@
 #include <algorithm>
 #include <numeric>
 
-namespace algebraic_parsers::examples {
+namespace alga::examples {
 
-    using namespace algebraic_parsers;
+    using namespace alga;
 
     // ============================================================================
     // Example 1: Basic Parser Composition - Sequential Processing
@@ -178,7 +178,8 @@ namespace algebraic_parsers::examples {
             
             // Apply stemming to the valid lc_alpha word
             auto stem_result = stemmer(*lc_word);
-            return std::string{stem_result};
+            if (!stem_result) return std::nullopt;
+            return static_cast<std::string>(*stem_result);
         }
     };
 
@@ -477,4 +478,4 @@ namespace algebraic_parsers::examples {
         }
     }
 
-} // namespace algebraic_parsers::examples
+} // namespace alga::examples

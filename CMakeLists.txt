@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(algebraic_parsers VERSION 1.0.0 LANGUAGES CXX)
+project(alga VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -32,12 +32,12 @@ if(NOT GTest_FOUND)
 endif()
 
 # Create header-only interface library for the main parsers
-add_library(algebraic_parsers INTERFACE)
-target_include_directories(algebraic_parsers INTERFACE 
+add_library(alga INTERFACE)
+target_include_directories(alga INTERFACE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_compile_features(algebraic_parsers INTERFACE cxx_std_20)
+target_compile_features(alga INTERFACE cxx_std_20)
 
 # Porter2 stemmer implementation (has .cpp file)
 add_library(porter2stemmer 
@@ -52,7 +52,7 @@ target_include_directories(porter2stemmer PUBLIC
 target_compile_features(porter2stemmer PUBLIC cxx_std_20)
 
 # Link the porter2stemmer to the main library
-target_link_libraries(algebraic_parsers INTERFACE porter2stemmer)
+target_link_libraries(alga INTERFACE porter2stemmer)
 
 # ============================================================================
 # Executables for testing individual components
@@ -60,13 +60,13 @@ target_link_libraries(algebraic_parsers INTERFACE porter2stemmer)
 
 # Test executables for the existing test files
 add_executable(lc_alpha_test test/lc_alpha_test.cpp)
-target_link_libraries(lc_alpha_test algebraic_parsers)
+target_link_libraries(lc_alpha_test alga)
 
 add_executable(porter2stemmer_test test/porter2stemmer_test.cpp)
-target_link_libraries(porter2stemmer_test algebraic_parsers)
+target_link_libraries(porter2stemmer_test alga)
 
 add_executable(fsm_string_rewriter_driver test/fsm_string_rewriter_driver.cpp)
-target_link_libraries(fsm_string_rewriter_driver algebraic_parsers)
+target_link_libraries(fsm_string_rewriter_driver alga)
 
 # ============================================================================
 # Test Suite with Google Test
@@ -78,7 +78,7 @@ if(GTest_FOUND OR TARGET gtest)
     # Main composition test suite
     add_executable(composition_tests test/composition_test.cpp)
     target_link_libraries(composition_tests 
-        algebraic_parsers 
+        alga 
         gtest 
         gtest_main 
         Threads::Threads
@@ -89,7 +89,7 @@ if(GTest_FOUND OR TARGET gtest)
         test/unit_tests.cpp  # We'll create this
     )
     target_link_libraries(unit_tests 
-        algebraic_parsers 
+        alga 
         gtest 
         gtest_main 
         Threads::Threads
@@ -100,7 +100,7 @@ if(GTest_FOUND OR TARGET gtest)
         test/integration_tests.cpp  # We'll create this
     )
     target_link_libraries(integration_tests 
-        algebraic_parsers 
+        alga 
         gtest 
         gtest_main 
         Threads::Threads
@@ -165,8 +165,8 @@ endif()
 # Installation
 # ============================================================================
 
-install(TARGETS algebraic_parsers porter2stemmer
-    EXPORT algebraic_parsers_targets
+install(TARGETS alga porter2stemmer
+    EXPORT alga_targets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
@@ -178,30 +178,30 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
-install(EXPORT algebraic_parsers_targets
-    FILE algebraic_parsers_targets.cmake
-    NAMESPACE algebraic_parsers::
-    DESTINATION lib/cmake/algebraic_parsers
+install(EXPORT alga_targets
+    FILE alga_targets.cmake
+    NAMESPACE alga::
+    DESTINATION lib/cmake/alga
 )
 
 # Generate package configuration
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    algebraic_parsers_config_version.cmake
+    alga_config_version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/algebraic_parsers_config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/algebraic_parsers_config.cmake
-    INSTALL_DESTINATION lib/cmake/algebraic_parsers
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/alga_config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/alga_config.cmake
+    INSTALL_DESTINATION lib/cmake/alga
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/algebraic_parsers_config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/algebraic_parsers_config_version.cmake
-    DESTINATION lib/cmake/algebraic_parsers
+    ${CMAKE_CURRENT_BINARY_DIR}/alga_config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/alga_config_version.cmake
+    DESTINATION lib/cmake/alga
 )
 
 # ============================================================================

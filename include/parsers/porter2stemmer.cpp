@@ -29,8 +29,8 @@ static bool replaceIfExists(string& word,
 static bool isValidLIEnding(char ch);
 static bool containsVowel(const string& word, size_t start, size_t end);
 
-namespace algebraic_parsers
-{
+namespace alga {
+
     void porter2stemmer(string & word)
     {
         // special case short words
@@ -69,13 +69,14 @@ namespace algebraic_parsers
         std::replace(word.begin(), word.end(), 'Y', 'y');
         return;
     }
-}
+
+} // namespace alga
 
 /**
  * The procedures below this comment are internal to the implementation
  * of porter2stemmer and not externally visible.
  */
-size_t getStartR1(const string& word)
+static size_t getStartR1(const string& word)
 {
     // special cases
     if (word.substr(0, 5) == "gener")
@@ -96,7 +97,7 @@ size_t getStartR2(const string& word, size_t startR1)
     return firstNonVowelAfterVowel(word, startR1+1);
 }
 
-size_t firstNonVowelAfterVowel(
+static size_t firstNonVowelAfterVowel(
     const string& word,
     size_t start)
 {
@@ -109,7 +110,7 @@ size_t firstNonVowelAfterVowel(
     return word.size();
 }
 
-void changeY(string& word)
+static void changeY(string& word)
 {
     if(word.find_first_of("y") == string::npos)
         return;
@@ -127,7 +128,7 @@ void changeY(string& word)
 /**
   Step 0
 */
-void step0(string& word)
+static void step0(string& word)
 {
     // short circuit the longest suffix
     replaceIfExists(word, "'s'", "", 0)
@@ -152,7 +153,7 @@ void step0(string& word)
     delete if the preceding word part contains a vowel not immediately before the
     s (so gas and this retain the s, gaps and kiwis lose it)
 */
-bool step1A(string& word)
+static bool step1A(string& word)
 {
     if(!replaceIfExists(word, "sses", "ss", 0))
     {
@@ -189,7 +190,7 @@ bool step1A(string& word)
       if the word ends with a double remove the last letter (so hopp -> hop), or
       if the word is short, add e (so hop -> hope)
 */
-void step1B(string& word, size_t startR1)
+static void step1B(string& word, size_t startR1)
 {
     bool exists = endsWith(word, "eedly") || endsWith(word, "eed");
 
@@ -225,7 +226,7 @@ void step1B(string& word, size_t startR1)
   Replace suffix y or Y by i if preceded by a non-vowel which is not the first
   letter of the word (so cry -> cri, by -> by, say -> say)
 */
-void step1C(string& word)
+static void step1C(string& word)
 {
     size_t size = word.size();
     if(size > 2 && (word[size - 1] == 'y' || word[size - 1] == 'Y'))
@@ -257,7 +258,7 @@ void step1C(string& word)
   ogi:                  replace by og if preceded by l
   li:                   delete if preceded by a valid li-ending
 */
-void step2(string& word, size_t startR1)
+static void step2(string& word, size_t startR1)
 {
     static const std::vector<std::pair<string, string>> subs =
     {
@@ -304,7 +305,7 @@ void step2(string& word, size_t startR1)
   ful, ness:          delete
   ative:              delete if in R2
 */
-void step3(string& word, size_t startR1, size_t startR2)
+static void step3(string& word, size_t startR1, size_t startR2)
 {
     static const std::vector<std::pair<string, string>> subs =
     {
@@ -332,7 +333,7 @@ void step3(string& word, size_t startR1, size_t startR2)
   ion
                               delete if preceded by s or t
 */
-void step4(string& word, size_t startR2)
+static void step4(string& word, size_t startR2)
 {
     static const std::vector<std::pair<string, string>> subs =
     {
@@ -365,7 +366,7 @@ void step4(string& word, size_t startR2)
   e     delete if in R2, or in R1 and not preceded by a short syllable
   l     delete if in R2 and preceded by l
 */
-void step5(string& word, size_t startR1, size_t startR2)
+static void step5(string& word, size_t startR1, size_t startR2)
 {
     size_t size = word.size();
     if(word[size - 1] == 'e')
@@ -389,7 +390,7 @@ void step5(string& word, size_t startR1, size_t startR2)
  * (a) a vowel followed by a non-vowel other than w, x or Y and preceded by a non-vowel
  * (b) a vowel at the beginning of the word followed by a non-vowel.
  */
-bool isShort(const string& word)
+static bool isShort(const string& word)
 {
     size_t size = word.size();
 
@@ -405,7 +406,7 @@ bool isShort(const string& word)
     return size == 2 && isVowelY(word[0]) && !isVowelY(word[1]);
 }
 
-bool special(string& word)
+static bool special(string& word)
 {
     static const std::unordered_map<string, string> exceptions =
     {
@@ -428,25 +429,26 @@ bool special(string& word)
            word == "andes";
 }
 
-bool isVowelY(char ch)
+// Static helper functions (not in namespace)
+static bool isVowelY(char ch)
 {
     return ch == 'e' || ch == 'a' || ch == 'i' ||
            ch == 'o' || ch == 'u' || ch == 'y';
 }
 
-bool isVowel(char ch)
+static bool isVowel(char ch)
 {
     return ch == 'e' || ch == 'a' || ch == 'i' ||
            ch == 'o' || ch == 'u';
 }
 
-bool endsWith(const string& word, const string& str)
+static bool endsWith(const string& word, const string& str)
 {
     return word.size() >= str.size() &&
            word.substr(word.size() - str.size()) == str;
 }
 
-bool endsInDouble(const string& word)
+static bool endsInDouble(const string& word)
 {
     if(word.size() >= 2)
     {
@@ -463,7 +465,7 @@ bool endsInDouble(const string& word)
     return false;
 }
 
-bool replaceIfExists(string& word, const string& suffix, const string& replacement, size_t start)
+static bool replaceIfExists(string& word, const string& suffix, const string& replacement, size_t start)
 {
     if(!(start > word.size())
             && endsWith(word.substr(start, word.size() - start), suffix))
@@ -474,13 +476,13 @@ bool replaceIfExists(string& word, const string& suffix, const string& replaceme
     return false;
 }
 
-bool isValidLIEnding(char ch)
+static bool isValidLIEnding(char ch)
 {
     return ch == 'c' || ch == 'd' || ch == 'e' || ch == 'g' || ch == 'h'
            || ch == 'k' || ch == 'm' || ch == 'n' || ch == 'r' || ch == 't';
 }
 
-bool containsVowel(const string& word, size_t start, size_t end)
+static bool containsVowel(const string& word, size_t start, size_t end)
 {
     if(start <= end && end < word.size())
     {

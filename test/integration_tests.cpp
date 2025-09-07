@@ -19,9 +19,9 @@
 #include <fstream>
 #include <sstream>
 
-using namespace algebraic_parsers;
-using namespace algebraic_parsers::combinatorial;
-using namespace algebraic_parsers::examples;
+using namespace alga;
+using namespace alga::combinatorial;
+using namespace alga::examples;
 
 // ============================================================================
 // Real-World Document Processing Integration Tests
@@ -269,8 +269,7 @@ TEST_F(CombinatorialIntegrationTest, ErrorRecoveryAndRobustness) {
     auto digit_parser = make_digit_parser();
     
     // Create a parser that tries to recover from errors
-    auto robust_parser = many(alternative<decltype(alpha_parser), decltype(digit_parser), std::string>(
-        alpha_parser, digit_parser));
+    auto robust_parser = many(alternative(alpha_parser, digit_parser));
     
     std::string problematic_input = "hello123world456test";
     auto [remaining, result] = robust_parser(problematic_input.begin(), problematic_input.end());

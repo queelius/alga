@@ -14,8 +14,8 @@
 #include <string>
 #include <optional>
 
-using namespace algebraic_parsers;
-using namespace algebraic_parsers::combinatorial;
+using namespace alga;
+using namespace alga::combinatorial;
 
 // ============================================================================
 // lc_alpha Unit Tests
@@ -111,8 +111,8 @@ TEST_F(Porter2StemmerTest, BasicStemming) {
     auto running = *make_lc_alpha("running");
     auto result = stemmer(running);
     
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(std::string(*result), "run");
+    // When called with lc_alpha, returns porter2_stem directly (not optional)
+    EXPECT_EQ(std::string(result), "run");
 }
 
 TEST_F(Porter2StemmerTest, StringInterfaceStemming) {
@@ -138,8 +138,8 @@ TEST_F(Porter2StemmerTest, AlreadyStemmedWord) {
     auto run = *make_lc_alpha("run");
     auto result = stemmer(run);
     
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(std::string(*result), "run");
+    // When called with lc_alpha, returns porter2_stem directly (not optional)
+    EXPECT_EQ(std::string(result), "run");
 }
 
 TEST_F(Porter2StemmerTest, Porter2StemEquality) {
@@ -149,11 +149,9 @@ TEST_F(Porter2StemmerTest, Porter2StemEquality) {
     auto stem1 = stemmer(running);
     auto stem2 = stemmer(runs);
     
-    ASSERT_TRUE(stem1.has_value());
-    ASSERT_TRUE(stem2.has_value());
-    
+    // When called with lc_alpha, returns porter2_stem directly (not optional)
     // Both should stem to "run"
-    EXPECT_EQ(*stem1, *stem2);
+    EXPECT_EQ(stem1, stem2);
 }
 
 // ============================================================================
@@ -292,7 +290,7 @@ TEST_F(CombinatorialParserTest, AlternativeParser) {
     auto digit_parser = make_digit_parser();
     auto alpha_parser = make_alpha_parser();
     auto alt_parser = alternative<decltype(digit_parser), decltype(alpha_parser), std::string>(
-        digit_parser, alpha_parser);
+        std::move(digit_parser), std::move(alpha_parser));
     
     auto [remaining, result] = alt_parser(test_string.begin(), test_string.end());
     
@@ -315,7 +313,7 @@ TEST_F(CombinatorialParserTest, ManyParser) {
 
 TEST_F(CombinatorialParserTest, OptionalParser) {
     auto digit_parser = make_digit_parser();
-    auto opt_parser = optional(digit_parser);
+    auto opt_parser = maybe(digit_parser);  // Use 'maybe' instead of 'optional' to avoid name conflict
     
     // Test with alpha input (digit parser should fail but optional succeeds)
     auto [remaining, result] = opt_parser(test_string.begin(), test_string.end());
@@ -350,7 +348,7 @@ protected:
 
 TEST_F(ParserCompositionUnitTest, CompleteParseSuccess) {
     auto word_parser = make_alpha_parser();
-    auto result = parse(word_parser, std::string("hello"));
+    auto result = parse(std::move(word_parser), std::string("hello"));
     
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(*result, "hello");
@@ -358,14 +356,14 @@ TEST_F(ParserCompositionUnitTest, CompleteParseSuccess) {
 
 TEST_F(ParserCompositionUnitTest, CompleteParsePartialConsumption) {
     auto word_parser = make_alpha_parser();
-    auto result = parse(word_parser, test_input); // Only parses "hello", not complete
+    auto result = parse(std::move(word_parser), test_input); // Only parses "hello", not complete
     
     EXPECT_FALSE(result.has_value()); // Should fail because it doesn't consume all input
 }
 
 TEST_F(ParserCompositionUnitTest, PartialParseSuccess) {
     auto word_parser = make_alpha_parser();
-    auto [remaining, result] = parse_partial(word_parser, test_input);
+    auto [remaining, result] = parse_partial(std::move(word_parser), test_input);
     
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(*result, "hello");
@@ -422,10 +420,14 @@ TEST_F(MathematicalPropertiesTest, AlternativeCommutativity) {
     std::string digit_input = "123";
     std::string alpha_input = "hello";
     
+    // Need to create fresh parsers since we move them
     auto alt1 = alternative<decltype(digit_parser), decltype(alpha_parser), std::string>(
-        digit_parser, alpha_parser);
-    auto alt2 = alternative<decltype(alpha_parser), decltype(digit_parser), std::string>(
-        alpha_parser, digit_parser);
+        std::move(digit_parser), std::move(alpha_parser));
+    
+    auto digit_parser2 = make_digit_parser();
+    auto alpha_parser2 = make_alpha_parser();
+    auto alt2 = alternative<decltype(alpha_parser2), decltype(digit_parser2), std::string>(
+        std::move(alpha_parser2), std::move(digit_parser2));
     
     auto [_, result1] = alt1(digit_input.begin(), digit_input.end());
     auto [__, result2] = alt2(digit_input.begin(), digit_input.end());

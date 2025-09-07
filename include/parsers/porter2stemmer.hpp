@@ -1,134 +1,298 @@
 #pragma once
-/**
- * @file porter2stemmer.h
- * @author Sean Massung
- * @modified Alex Towell
- *
- * Implementation of
- * http://snowball.tartarus.org/algorithms/english/stemmer.html
- */
 
-#include <array>
 #include "lc_alpha.hpp"
 #include <optional>
 #include <string>
+#include <string_view>
+#include <iostream>
 #include <utility>
+#include <vector>
+#include <functional>
+
 using std::string;
 using std::optional;
+using std::string_view;
 using std::pair;
 
-namespace algebraic_parsers
+namespace alga
 {
+    // Forward declaration of stemming function
     void porter2stemmer(string &);
 
     /**
-     * porter2_stem has no algebraic structure. Any operation, with
-     * the exception of concatenation with an empty string, may generate a
-     * string that is not a porter2_stem.
+     * @brief Porter2 stemmed word with proper value semantics
      * 
-     * We can *lift* the stemmer to a sequence of porter2_stems, however.
-     * Let us call this lifting mechanism an ngram stem.
+     * Represents a word that has been processed by the Porter2 stemming algorithm.
+     * Now supports full value semantics and uniform composition operations.
      */
     struct porter2_stem
     {
-        using element_type = char;
-        using value_type = lc_alpha;
-
-        explicit operator string() const { return (string)w; }
-        explicit operator lc_alpha() const { return w; }
-
-        auto begin() const { return w.begin(); }
-        auto end() const { return w.end(); }
-
-        lc_alpha const w;
+        lc_alpha word;  // Removed const to enable proper value semantics
+        
+        // Constructors
+        porter2_stem() = default;
+        porter2_stem(lc_alpha w) : word(std::move(w)) {}
+        
+        // Full value semantics
+        porter2_stem(porter2_stem const& other) = default;
+        porter2_stem(porter2_stem&& other) = default;
+        porter2_stem& operator=(porter2_stem const& other) = default;
+        porter2_stem& operator=(porter2_stem&& other) = default;
+        
+        // Access interface
+        explicit operator string() const { return static_cast<string>(word); }
+        lc_alpha const& lc() const { return word; }
+        
+        // Iterator interface  
+        auto begin() const { return word.begin(); }
+        auto end() const { return word.end(); }
+        bool empty() const { return word.empty(); }
+        size_t size() const { return word.size(); }
     };
-
+    
     /**
-     * Models the concept of a word stemmer, the porter2 stemmer, which
-     * is a surjective function object, denoted porter2_stemmer, of type
-     *     lc_alpha -> porter2_stem,
-     * where lc_alpha is the set of lower-case alpha strings and porter2_stem
-     * is a subset of lc_alpha consisting of the porter2 stems of lc_alpha
-     * strings.
+     * @brief Factory function for porter2_stem from string input
      * 
-     * The stemmer also maps arbitrary strings, in which case it may be viewed
-     * as a function of type
-     *     string -> optional<porter2_stem>,
-     * where any string not in lc_alpha is mapped to nullopt (nothing).
+     * Validates input, converts to lc_alpha, applies stemming, returns result.
+     * This is the primary way to create porter2_stem from arbitrary string input.
+     */
+    optional<porter2_stem> make_porter2_stem(string_view input)
+    {
+        auto lc_opt = make_lc_alpha(input);
+        if (!lc_opt) {
+            return std::nullopt;
+        }
+        
+        // Apply Porter2 stemming
+        string s = lc_opt->str();
+        porter2stemmer(s);
+        
+        auto stemmed_lc = make_lc_alpha(s);
+        if (!stemmed_lc) {
+            // This shouldn't happen if porter2stemmer is correct
+            return std::nullopt;
+        }
+        
+        return porter2_stem(std::move(*stemmed_lc));
+    }
+    
+    /**
+     * @brief Porter2 stemmer with uniform optional interface
      * 
-     * Strings with identical stems are in the same equivalence class, e.g., if
-     *     porter2_stem("running") == porter2_stem("run")
-     * then they are in the same class. This means that any string not in
-     * lc_alpha is in the same equivalence class.
-     * 
-     * Observe that if porter2_stem(x) maps to nullopt, then x is not stemmable
-     * by porter2_stem, which may used to compose stemmers or other types of
-     * language grammars or parsers.
+     * Provides a clean, consistent interface where ALL operations return optional<T>.
+     * No more mixed return types - everything follows the same pattern.
      */
     struct porter2_stemmer
     {
-        using alphabet_type = char;
-        using value_type = lc_alpha; // lower-case alphabetic subset of char*
+        using input_type = string_view;
         using output_type = porter2_stem;
-
-        // I models a forward iterator such that value_type(I)
-        // is convertible to string.
-        /*template <typename I>
-        pair<I,optional<porter2_stem>> operator()(I begin, I end) const
+        
+        /**
+         * @brief Stem a string input (primary interface)
+         * 
+         * @param input String to stem
+         * @return optional<porter2_stem> Result if input is valid, nullopt if invalid
+         */
+        optional<porter2_stem> operator()(string_view input) const
         {
-            string x;
-            while (begin != end && isalpha(*begin))
-                x += (string)(*begin);
-            return std::make_pair(begin,operator()(std::move(x)));
+            return make_porter2_stem(input);
         }
-        */
-
-       static constexpr auto alphabet(alphabet_type c) { return isalpha(c); }
-
-        auto operator()(lc_alpha const & x) const
+        
+        /**
+         * @brief Stem an lc_alpha input 
+         * 
+         * @param input Valid lc_alpha to stem
+         * @return optional<porter2_stem> Always succeeds for valid lc_alpha input
+         */
+        optional<porter2_stem> operator()(lc_alpha const& input) const
         {
-            auto s = (string)x;
+            string s = input.str();
             porter2stemmer(s);
-            return porter2_stem{*make_lc_alpha(std::move(s))};
+            
+            auto stemmed_lc = make_lc_alpha(s);
+            if (!stemmed_lc) {
+                // This shouldn't happen if porter2stemmer is correct
+                return std::nullopt;
+            }
+            
+            return porter2_stem(std::move(*stemmed_lc));
         }
-
-        optional<porter2_stem> operator()(string x) const
+        
+        /**
+         * @brief Iterator-based parsing interface for composition
+         * 
+         * Parses alphabetic characters from iterator range and stems the result.
+         * Returns pair of remaining iterator and optional result.
+         */
+        template<typename Iterator>
+        pair<Iterator, optional<porter2_stem>> parse(Iterator begin, Iterator end) const
         {
-            auto w = make_lc_alpha(x);
-            if (!w)
-                return {};
-            return operator()(*w);
+            string word;
+            Iterator current = begin;
+            
+            // Parse alphabetic characters
+            while (current != end && std::isalpha(*current)) {
+                word += std::tolower(*current);
+                ++current;
+            }
+            
+            if (word.empty()) {
+                return {current, std::nullopt};
+            }
+            
+            // Apply stemming
+            porter2stemmer(word);
+            
+            auto lc_opt = make_lc_alpha(word);
+            if (!lc_opt) {
+                return {current, std::nullopt};
+            }
+            
+            return {current, porter2_stem(std::move(*lc_opt))};
         }
     };
-
-    // Relational predicates.
-    auto operator==(porter2_stem const & lhs, porter2_stem const & rhs)
+    
+    /**
+     * @brief Direct composition for porter2_stem values
+     * 
+     * Implements the monoid operation directly on values for better compositionality.
+     */
+    porter2_stem operator*(porter2_stem const& lhs, porter2_stem const& rhs)
     {
-        return lhs.w == rhs.w;
+        lc_alpha combined_word = lhs.word * rhs.word;
+        return porter2_stem(combined_word);
     }
 
-    auto operator!=(porter2_stem const & lhs, porter2_stem const & rhs)
+    /**
+     * @brief Monadic composition for optional porter2_stem values
+     * 
+     * Implements uniform composition pattern across all algebraic types.
+     */
+    optional<porter2_stem> operator*(optional<porter2_stem> const& lhs, optional<porter2_stem> const& rhs)
     {
-        return lhs.w != rhs.w;
+        if (!lhs || !rhs) {
+            return std::nullopt;
+        }
+        
+        return *lhs * *rhs;
+    }
+    
+    // Comparison operators
+    bool operator==(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return lhs.word == rhs.word;
+    }
+    
+    bool operator!=(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return !(lhs == rhs);
+    }
+    
+    bool operator<(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return lhs.word < rhs.word;
+    }
+    
+    bool operator<=(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return lhs.word <= rhs.word;
+    }
+    
+    bool operator>(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return lhs.word > rhs.word;
+    }
+    
+    bool operator>=(porter2_stem const& lhs, porter2_stem const& rhs)
+    {
+        return lhs.word >= rhs.word;
+    }
+    
+    // Stream output operator
+    std::ostream& operator<<(std::ostream& os, porter2_stem const& stem)
+    {
+        return os << static_cast<string>(stem);
     }
 
-    auto operator>=(porter2_stem const & lhs, porter2_stem const & rhs)
+    // ============================================================================
+    // Extended Algebraic Operators with C++20 Concepts
+    // ============================================================================
+
+    /**
+     * @brief Choice operator - prefer left operand, fallback to right if left is empty
+     */
+    porter2_stem operator|(porter2_stem const& lhs, porter2_stem const& rhs)
     {
-        return lhs.w >= rhs.w;
+        return lhs.empty() ? rhs : lhs;
     }
 
-    auto operator<=(porter2_stem const & lhs, porter2_stem const & rhs)
+    /**
+     * @brief Choice operator for optionals - first non-nullopt wins
+     */
+    optional<porter2_stem> operator|(optional<porter2_stem> const& lhs, optional<porter2_stem> const& rhs)
     {
-        return lhs.w <= rhs.w;
+        return lhs ? lhs : rhs;
     }
 
-    auto operator>(porter2_stem const & lhs, porter2_stem const & rhs)
+    /**
+     * @brief Repetition operator - compose stem with itself N times
+     */
+    porter2_stem operator^(porter2_stem const& base, size_t count)
     {
-        return lhs.w > rhs.w;
+        if (count == 0) return porter2_stem{};
+        if (count == 1) return base;
+        
+        porter2_stem result = base;
+        for (size_t i = 1; i < count; ++i) {
+            result = result * base;
+        }
+        return result;
     }
 
-    auto operator<(porter2_stem const & lhs, porter2_stem const & rhs)
+    /**
+     * @brief Sequential composition - creates ordered sequence
+     */
+    std::vector<porter2_stem> operator>>(porter2_stem const& lhs, porter2_stem const& rhs)
     {
-        return lhs.w < rhs.w;
+        return {lhs, rhs};
+    }
+
+    /**
+     * @brief Logical OR for optionals
+     */
+    optional<porter2_stem> operator||(optional<porter2_stem> const& lhs, optional<porter2_stem> const& rhs)
+    {
+        return lhs ? lhs : rhs;
+    }
+
+    /**
+     * @brief Logical AND for optionals - both must succeed
+     */
+    optional<std::pair<porter2_stem, porter2_stem>> operator&&(optional<porter2_stem> const& lhs, optional<porter2_stem> const& rhs)
+    {
+        if (!lhs || !rhs) return std::nullopt;
+        return std::make_pair(*lhs, *rhs);
+    }
+
+    /**
+     * @brief Function application operator
+     */
+    template<typename F>
+        requires std::invocable<F, porter2_stem>
+    auto operator%(porter2_stem const& value, F const& function) -> decltype(function(value))
+    {
+        return function(value);
+    }
+
+    /**
+     * @brief Function application for optional porter2_stem
+     */
+    template<typename F>
+        requires std::invocable<F, porter2_stem>
+    auto operator%(optional<porter2_stem> const& maybe_value, F const& function) 
+        -> optional<std::decay_t<decltype(function(*maybe_value))>>
+    {
+        if (!maybe_value) return std::nullopt;
+        return function(*maybe_value);
     }
 }
