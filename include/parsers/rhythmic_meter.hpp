@@ -13,7 +13,7 @@
 #include <numeric>
 #include <functional>
 
-namespace algebraic_parsers {
+namespace alga {
 
 /**
  * @brief Stress level enumeration for syllabic analysis
@@ -442,4 +442,4 @@ std::optional<rhythmic_pattern> make_rhythmic_pattern(std::string_view text) {
     return rhythmic_pattern(std::move(syllables));
 }
 
-} // namespace algebraic_parsers
+} // namespace alga

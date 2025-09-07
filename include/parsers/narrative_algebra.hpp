@@ -15,7 +15,7 @@
 #include <functional>
 #include <complex>
 
-namespace algebraic_parsers {
+namespace alga {
 
 /**
  * @brief Narrative element types for structural analysis
@@ -691,4 +691,4 @@ std::optional<narrative_element> make_narrative_element(std::string_view text,
     return narrative_element(type, tension, chars, themes, *content);
 }
 
-} // namespace algebraic_parsers
+} // namespace alga

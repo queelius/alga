@@ -7,7 +7,7 @@
 #include <regex>
 #include <sstream>
 
-namespace algebraic_parsers {
+namespace alga {
 namespace dsl {
 
 /**
@@ -492,4 +492,4 @@ private:
 };
 
 } // namespace dsl
-} // namespace algebraic_parsers
+} // namespace alga

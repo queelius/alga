@@ -16,7 +16,7 @@
 #include <functional>
 #include <iomanip>
 
-namespace algebraic_parsers {
+namespace alga {
 
 /**
  * @brief Semantic dimension enumeration for conceptual analysis
@@ -587,4 +587,4 @@ std::ostream& operator<<(std::ostream& os, semantic_vector const& vector) {
     return os;
 }
 
-} // namespace algebraic_parsers
+} // namespace alga
