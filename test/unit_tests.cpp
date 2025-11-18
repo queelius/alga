@@ -110,9 +110,10 @@ protected:
 TEST_F(Porter2StemmerTest, BasicStemming) {
     auto running = *make_lc_alpha("running");
     auto result = stemmer(running);
-    
-    // When called with lc_alpha, returns porter2_stem directly (not optional)
-    EXPECT_EQ(std::string(result), "run");
+
+    // When called with lc_alpha, returns optional<porter2_stem>
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(std::string(*result), "run");
 }
 
 TEST_F(Porter2StemmerTest, StringInterfaceStemming) {
@@ -137,21 +138,24 @@ TEST_F(Porter2StemmerTest, EmptyStringInput) {
 TEST_F(Porter2StemmerTest, AlreadyStemmedWord) {
     auto run = *make_lc_alpha("run");
     auto result = stemmer(run);
-    
-    // When called with lc_alpha, returns porter2_stem directly (not optional)
-    EXPECT_EQ(std::string(result), "run");
+
+    // When called with lc_alpha, returns optional<porter2_stem>
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(std::string(*result), "run");
 }
 
 TEST_F(Porter2StemmerTest, Porter2StemEquality) {
     auto running = *make_lc_alpha("running");
     auto runs = *make_lc_alpha("runs");
-    
+
     auto stem1 = stemmer(running);
     auto stem2 = stemmer(runs);
-    
-    // When called with lc_alpha, returns porter2_stem directly (not optional)
+
+    // When called with lc_alpha, returns optional<porter2_stem>
     // Both should stem to "run"
-    EXPECT_EQ(stem1, stem2);
+    ASSERT_TRUE(stem1.has_value());
+    ASSERT_TRUE(stem2.has_value());
+    EXPECT_EQ(*stem1, *stem2);
 }
 
 // ============================================================================
